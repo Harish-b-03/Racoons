@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgis:
+    image: postgis/postgis:17-master
+    container_name: fitness_tracker_db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: fitness_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secretpassword}
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fitness-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: fitness_tracker_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - fitness-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fitness_tracker_api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgis
+      - DB_PORT=5432
+      - DB_NAME=fitness_tracker
+      - DB_USER=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-secretpassword}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-256-bit-secret-change-this-in-production-must-be-at-least-256-bits-long-for-hs256}
+      - SERVER_PORT=8080
+    depends_on:
+      postgis:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fitness-network
+
+volumes:
+  postgis_data:
+  redis_data:
+
+networks:
+  fitness-network:
+    driver: bridge
