@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Alert, Text, Platform, Dimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Alert, Text, Platform, Dimensions, TouchableOpacity, PermissionsAndroid } from 'react-native';
 import { LeafletView, MapShape, MapShapeType } from 'react-native-leaflet-view';
+import Geolocation from '@react-native-community/geolocation';
 
 const { height, width } = Dimensions.get('window');
 const DEFAULT_LOCATION = { lat: 13.0827, lng: 80.2707 };
@@ -10,10 +11,35 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState(DEFAULT_LOCATION);
   const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
 
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+    return true;
+  };
+
+  const goToMyLocation = async () => {
+    const hasPermission = await requestLocationPermission();
+    
+    if (hasPermission) {
+      Geolocation.getCurrentPosition( // watchPosition -- live location tracking
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter({ lat: latitude, lng: longitude });
+        },
+        (error) => Alert.alert("Error", error.message),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    }
+  };
+
   const mapMarkers = [
     {
       id: 'marker-1',
-      position: DEFAULT_LOCATION,
+      position: mapCenter,
       icon: '🦝', 
       title: 'Racoon HQ',
       size: [30, 30],
@@ -25,9 +51,9 @@ export default function App() {
       shapeType: MapShapeType.POLYGON,
       id: 'poly-1',
       positions: [
-        { lat: DEFAULT_LOCATION.lat + 0.01, lng: DEFAULT_LOCATION.lng },
-        { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng + 0.01 },
-        { lat: DEFAULT_LOCATION.lat - 0.01, lng: DEFAULT_LOCATION.lng },
+        { lat: mapCenter.lat + 0.01, lng: mapCenter.lng },
+        { lat: mapCenter.lat, lng: mapCenter.lng + 0.01 },
+        { lat: mapCenter.lat - 0.01, lng: mapCenter.lng },
       ],
       color: 'red',
     },
@@ -35,10 +61,10 @@ export default function App() {
       shapeType: MapShapeType.POLYGON,
       id: 'poly-2',
       positions: [
-        { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng - 0.02},
-        { lat: DEFAULT_LOCATION.lat - 0.01, lng: DEFAULT_LOCATION.lng + 0.01},
-        { lat: DEFAULT_LOCATION.lat - 0.02, lng: DEFAULT_LOCATION.lng + 0.015},
-        { lat: DEFAULT_LOCATION.lat - 0.03, lng: DEFAULT_LOCATION.lng - 0.01},
+        { lat: mapCenter.lat, lng: mapCenter.lng - 0.02},
+        { lat: mapCenter.lat - 0.01, lng: mapCenter.lng + 0.01},
+        { lat: mapCenter.lat - 0.02, lng: mapCenter.lng + 0.015},
+        { lat: mapCenter.lat - 0.03, lng: mapCenter.lng - 0.01},
       ],
       color: 'blue',
     },
@@ -87,6 +113,9 @@ export default function App() {
           <Text style={styles.buttonText}>−</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity style={styles.glassCircle} onPress={goToMyLocation}>
+          <Text style={{ fontSize: 24 }}></Text>
+        </TouchableOpacity>
     </View>
   );
 }
@@ -160,5 +189,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
     marginHorizontal: 10,
+  },
+  glassCircle: {
+    position: 'absolute',
+    bottom: 40,
+    right: 80,
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 27.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    elevation: 6,
   },
 });
