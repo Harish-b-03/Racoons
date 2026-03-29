@@ -1,2 +1,49 @@
-backend/.idea
-backend/target
+# --- Maven ---
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.restore
+release.properties
+dependency-reduced-pom.xml
+build.log
+.incremental/
+.polyglot.yml
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+cmake-build-*/
+
+# --- Eclipse ---
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+
+# --- VS Code ---
+.vscode/
+.history/
+*.code-workspace
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
+
+# --- Log files ---
+*.log
+logs/
+
+# --- Environment & Secrets ---
+.env
+.env.local
+src/main/resources/application-local.properties
+src/main/resources/application-dev.properties
+
+# --- Help/Temp ---
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
